@@ -1,0 +1,50 @@
+GitLab Flow
+
+Used heavily in GitLab.
+
+It combines environment-based branches with feature branches.
+
+Layman Explanation
+
+Think of different stages of deployment:
+
+Development → Testing → Production
+
+Code moves through these stages.
+
+feature/login
+      |
+      v
+develop
+      |
+      v
+pre-production
+      |
+      v
+production
+
+Explanation
+
+Branches represent environments.
+
+Example:
+
+feature branch → develop → staging → production
+
+This helps teams control deployment stages.
+
+Interview Answer
+
+GitLab Flow extends GitHub Flow by adding environment branches such as staging or production, enabling better control over deployments and release management.
+
+Advantages
+
+Supports CI/CD pipelines
+
+Good environment control
+
+Easier than Git Flow
+
+Disadvantages
+
+Slightly more complex than GitHub Flow
