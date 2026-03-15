@@ -1,0 +1,63 @@
+GitHub Flow
+Layman Explanation
+
+Imagine a single main road where the final product lives.
+
+Whenever you want to build something new:
+
+Create a small side road (branch)
+
+Work on it
+
+Test it
+
+Merge it back to the main road
+
+That’s it. Very simple.
+
+This workflow is used heavily on GitHub.
+
+Diagram
+main
+  |
+  |---- feature-login ---- merge ---->
+  |
+  |---- feature-payment -- merge ---->
+  |
+  |---- bug-fix --------- merge ---->
+
+Workflow Steps
+
+1️⃣ Create branch from main
+
+git checkout -b feature-login
+
+
+2️⃣ Work and commit.
+
+3️⃣ Open Pull Request.
+
+4️⃣ Review + testing.
+
+5️⃣ Merge into main.
+
+Interview Answer
+
+GitHub Flow is a lightweight branching strategy where developers create short-lived feature branches from main, open pull requests for review, and merge changes back after testing.
+
+Advantages
+
+Very simple
+
+Fast deployment
+
+Works well with CI/CD
+
+Ideal for web applications
+
+Disadvantages
+
+No structured release management
+
+Hard to manage multiple production versions
+
