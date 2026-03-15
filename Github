@@ -1,0 +1,249 @@
+Github:
+is a "social coding" site. It allows you to upload code repositories for storage in the Git version control system. You can then collaborate on code projects, and the system is open-source by default, 
+meaning that anyone in the world can find your GitHub code, use it, learn from it, and improve on it.
+
+Github-Pages:
+
+1. What is GitHub Pages?
+GitHub Pages is a free static website hosting service provided by GitHub that allows developers to publish websites directly from a GitHub repository.
+
+It is mainly used to host:
+Static websites
+Project documentation
+Personal portfolios
+Blogs
+Demo pages for web applications
+
+The website is automatically built and deployed from files stored in the repository.
+
+Example URL format:
+
+https://username.github.io/repository-name
+
+If the repository is named:
+username.github.io
+
+Then the website becomes:
+https://username.github.io
+
+2. Key Features:
+
+1. Free Static Hosting -   Allows developers to host websites without managing servers.
+
+2. Automatic Deployment -  Whenever code is pushed to the repository, GitHub automatically updates the website.
+
+3. Custom Domain Support - You can connect a custom domain like:
+          www.myportfolio.com
+
+4. Integration with Git -  Website content is version controlled and managed through Git.
+
+5. Static Site Generators -  Supports generators like Jekyll to automatically convert Markdown into HTML pages.
+
+3. Types of GitHub Pages Sites
+1. User/Organization Site
+
+Repository name:
+
+username.github.io -  Website URL:https://username.github.io
+
+Used mainly for:
+  personal websites
+  portfolios
+  blogs
+
+2. Project Site
+
+Repository name can be anything: my-project  -   Website URL:https://username.github.io/my-project
+
+
+Used mainly for:
+project demos
+project documentation
+
+4. Basic Workflow
+Step 1: Create a Repository
+
+Create a repository on GitHub.
+
+Example:
+
+my-website
+
+Step 2: Add Website Files
+
+Example structure:
+
+my-website
+│
+├── index.html
+├── style.css
+└── script.js
+
+
+index.html acts as the homepage.
+
+Step 3: Enable GitHub Pages
+
+Go to Repository Settings
+
+Select Pages
+
+Under Source, choose:
+
+Branch: main
+
+Folder: /root
+
+Click Save
+
+Step 4: Access the Website
+
+GitHub provides a public URL:
+
+https://username.github.io/my-website
+
+5. Folder Sources for GitHub Pages
+
+GitHub Pages can build from:
+
+Root Folder
+/
+
+
+Example:
+
+index.html
+style.css
+
+Docs Folder
+/docs
+
+
+Example:
+
+docs/
+ ├── index.html
+ └── guide.html
+
+6. Advantages
+
+Free hosting
+
+Easy deployment
+
+Integrated with Git workflow
+
+Supports custom domains
+
+Good for open-source documentation
+
+Automatic version control
+
+7. Limitations
+
+Supports only static websites
+
+No backend languages like:
+
+Node.js
+
+Python
+
+PHP
+
+No databases
+
+Limited server-side processing
+
+It only supports:
+
+HTML
+CSS
+JavaScript
+
+8. Use Cases
+1. Developer Portfolio
+
+Showcase projects and skills.
+
+2. Open Source Documentation
+
+Many projects host docs online.
+
+Example:
+
+installation guide
+API reference
+tutorials
+
+3. Project Demo Websites
+
+Frontend applications like:
+
+calculator
+
+todo app
+
+weather app
+
+4. Technical Blogs
+
+Using static site generators like Jekyll.
+
+9. Interview Questions
+Q1. What is GitHub Pages?
+
+GitHub Pages is a static website hosting service that allows developers to publish websites directly from a GitHub repository.
+
+Q2. What types of sites can be hosted on GitHub Pages?
+
+Static websites
+
+Portfolio websites
+
+Documentation
+
+Blogs
+
+Frontend project demos
+
+Q3. What file is required for a GitHub Pages homepage?
+index.html
+
+
+or
+
+index.md
+
+Q4. Can GitHub Pages host backend applications?
+
+No. It only supports static content like HTML, CSS, and JavaScript.
+
+Q5. What is the difference between User Site and Project Site?
+Type	Repository Name	URL
+User Site	username.github.io	username.github.io
+Project Site	any name	username.github.io/project-name
+Q6. How does deployment happen in GitHub Pages?
+
+Deployment occurs automatically when code is pushed to the selected branch (usually main).
+
+10. Best Practices
+
+Always include an index.html file.
+
+Organize assets properly.
+
+Example:
+
+css/
+js/
+images/
+
+
+Use meaningful commit messages.
+
+Use README documentation for projects.
+
+✅ Short Interview Summary
+
+GitHub Pages is a free sta
