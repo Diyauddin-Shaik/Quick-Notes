@@ -1,0 +1,50 @@
+Trunk Based Development
+
+Very popular in companies like Google.
+
+Layman Explanation
+
+Instead of many branches, everyone works on one main branch called trunk.
+
+Developers create very small short-lived branches and merge them quickly.
+
+Diagram
+trunk (main)
+   |
+   |-- small feature branch -- merge
+   |
+   |-- small bug fix --------- merge
+   |
+   |-- small improvement ----- merge
+
+
+Branches usually live less than 1–2 days.
+
+Workflow
+
+1️⃣ Developers create a small branch.
+feature-small-change
+
+2️⃣ Commit quickly.
+
+3️⃣ Merge into trunk immediately.
+
+4️⃣ CI runs automated tests.
+
+Interview Answer
+
+Trunk Based Development is a branching strategy where developers frequently merge small changes into a single shared branch (trunk), enabling continuous integration and faster releases.
+
+Advantages
+
+Very fast development
+
+Supports continuous integration
+
+Minimal merge conflicts
+
+Disadvantages
+
+Requires strong automated testing
+
+Requires disciplined developers
