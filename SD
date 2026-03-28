@@ -1,0 +1,23 @@
+My name is Diyauddin Shaik, and I have around 4 years of experience as a Cloud DevOps Engineer at TCS. My core experience is in AWS cloud infrastructure, CI/CD automation, monitoring, and security compliance.
+
+I started my career with a data platform project built on Hadoop and MapR, where the system handled large-scale enterprise data for analytics and reporting. My role was to maintain cluster stability, 
+troubleshoot job failures, and monitor system performance using tools like Prometheus and Grafana. This gave me strong experience in Linux, monitoring, and platform reliability.
+
+Currently, I am working on the Ericsson R&D project, which provides a cloud-based DevOps platform for telecom microservices. These microservices support telecom operations such as service routing, analytics, 
+and monitoring, and they are deployed as containerized applications.
+
+The platform runs across both AWS Commercial (COM) and AWS GovCloud (GOV) environments. COM is mainly used for development and testing workloads, 
+while GOV is used for secure workloads that require strict compliance standards.
+
+Infrastructure is provisioned using Terraform, and we use AWS services like EC2, EKS, S3, IAM, and ECR. Jenkins is used to implement CI/CD pipelines for building and deploying applications into Kubernetes clusters on EKS.
+For monitoring and observability, we use Prometheus to collect metrics and Grafana dashboards to monitor system performance and generate alerts.
+
+One of the key requirements is maintaining a highly secure environment, especially in GovCloud. I worked on vulnerability remediation tasks, 
+fixing issues identified by security scans such as missing security headers like HSTS and clickjacking protection, and ensuring compliance with standards like FedRAMP.
+
+I also worked on automation using AWS Lambda to handle operational workflows such as data processing and alert handling, which reduced manual effort.
+
+On a daily basis, I handle requests related to infrastructure provisioning, CI/CD pipeline troubleshooting, access management, and security remediation. 
+I analyze the issue, identify the root cause, implement the solution, and ensure the system remains stable.
+
+Overall, our platform enables telecom applications to run securely and reliably, while allowing development teams to deploy faster using DevOps practices.
