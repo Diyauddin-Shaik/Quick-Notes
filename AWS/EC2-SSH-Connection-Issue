@@ -37,6 +37,9 @@ Now generate the public key from CMD
 C:\Users\PC>ssh-keygen -y -f C:\Users\PC\Downloads\aws_login.pem
 ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCSe6xYprMswusg8ZrUktuGlHRURiSYCc2CxGJLx5BIFbkzUg89jwovSZbg90dSSYjLk/t/96UYc+27wq/zgmtkvH8s+YdbqbOO/UFX7CTMJlwoTV6qdIAhrz8NTMW4Y8D917n7xsV87wbcAT4IRqj3GE1f11zVL7m4Qrvg61m5UDTSdJ+/4w/n/1ffu0IlTDH+hLHcqQcDQaJtT6KZA7/Zpkc7UId1jg4au1X5MsPSFSPeb9Dvg9gPGh8yjpcrx0aLIGW9nCbm4MtMjj84ka6AqCim8gObQILosTliPlfsMGRN9krnS/GEfb7NdD6qwddtBD5meu/WCjWEmhW83BgJ
 
+chmod 700 ~/.ssh
+chmod 600 ~/.ssh/authorized_keys
+
 
 Paste that key in EC2 authorized_key file don't delete the existing one paste it in new line
 
