@@ -1,0 +1,85 @@
+Title: Add com Jenkins agent AMI to monthly cadence
+
+First, I investigated the existing automation to understand how the Jenkins agent AMI was being created. I found that we already had an Ansible playbook responsible for creating the Jenkins agent AMI, including applying the required OS updates and patches.
+
+My requirement was to make sure Terraform used the appropriate monthly Jenkins agent AMI. So I modified the Ansible automation to add a cadence=monthly tag to the AMI when it was created.
+
+Then, on the Terraform side, I used the aws_ami data source to query AWS for the Jenkins agent AMI. I added filters for the Jenkins agent role and the monthly cadence, and used most_recent = true so Terraform would select the latest matching AMI.
+
+The AMI ID returned by the data source was then referenced using data.aws_ami.jenkins_agent.id in the Jenkins agent infrastructure configuration. This allowed the Jenkins agent infrastructure to use the latest monthly patched AMI rather than relying on a manually hardcoded AMI ID.
+
+Since I didn't have permission to manage Jenkins or run Terraform directly against the environment, I made the code changes and raised them through the team's PR/CI process, where the authorized team could run the Terraform plan and apply.
+
+             ANSIBLE
+                │
+                ▼
+     Create Jenkins Agent AMI
+                │
+       Apply OS patches
+                │
+                ▼
+         Add tag:
+       cadence = monthly
+                │
+                ▼
+          AWS AMI
+         ami-12345
+                │
+                │
+                ▼
+            TERRAFORM
+                │
+       aws_ami data source
+                │
+                ▼
+      Find matching AMIs
+                │
+       most_recent = true
+                │
+                ▼
+data.aws_ami.jenkins_agent.id
+                │
+                ▼
+    Jenkins Agent infrastructure
+                │
+                ▼
+        New Jenkins Agent
+1. Terraform (replace hardcoded AMI usage)
+# Fetch the latest monthly Jenkins Agent AMI
+data "aws_ami" "jenkins_agent" {
+  owners      = ["self"]   # replace with your AWS Account ID if needed
+  most_recent = true
+
+  filter {
+    name   = "tag:role"
+    values = ["jenkins-agent"]
+  }
+
+  filter {
+    name   = "tag:cadence"
+    values = ["monthly"]
+  }
+}
+
+# Example Launch Template using the AMI
+resource "aws_launch_template" "jenkins_agent" {
+  name          = "jenkins-agent-template"
+  image_id      = data.aws_ami.jenkins_agent.id
+  instance_type = "t3.medium" # adjust if needed
+
+  # Keep existing settings like IAM role, SGs, user_data etc.
+  # user_data = file("jenkins_agent_userdata.sh")
+  # iam_instance_profile { name = "jenkins-agent-profile" }
+}
+
+2. Ansible (add AMI tagging during bake)
+- name: Create Jenkins Agent AMI
+  amazon.aws.ec2_ami:
+    instance_id: "{{ ec2_id }}"
+    name: "jenkins-agent-{{ lookup('pipe','date +%Y%m') }}"
+    region: us-east-1
+    wait: yes
+    tags:
+      role: jenkins-agent
+      cadence: monthly
+      created_by: ansible
