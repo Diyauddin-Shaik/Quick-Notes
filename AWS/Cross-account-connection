@@ -1,0 +1,64 @@
+1. AWS Backup: cross-account copy
+Example: Your production EC2 instances are in Account A, and your company wants backups protected in a separate Account B.
+Implementation steps
+1. In the AWS Organizations management account, enable AWS Backup cross-account backup.
+2. In Account B, create a destination backup vault and configure its resource-based access policy to allow the approved source account to copy backups into it.
+3. Configure the required IAM permissions in Account A for initiating and copying backups.
+4. Configure KMS permissions and encryption keys appropriately. Customer-managed KMS keys may need policies allowing the required cross-account use.
+5. Create an AWS Backup plan in Account A. Set the backup schedule and retention, then add a copy rule pointing to Account B's destination vault.
+6. Monitor backup and copy job statuses, and test restoration from Account B.
+Cross-account backup generally requires the accounts to belong to the same AWS Organization, and support varies by resource type and Region.
+
+
+2. S3 Cross-Region Replication (CRR)
+Suppose your source bucket is in us-east-1 and your destination bucket is in ap-south-1 (Mumbai).
+
+Source S3 bucket
+Account A · us-east-1
+      |
+S3 Replication Rule (CRR)
+IAM role · bucket permissions · encryption
+      |
+Destination S3 bucket
+Account B · ap-south-1
+
+When a new object is uploaded to the source bucket, S3 can automatically replicate it to the destination bucket based on your replication rule. Both buckets must have versioning enabled. 
+
+AWS re:Post
+
+
+
+How to implement CRR
+1. Create the source and destination S3 buckets in their respective Regions.
+2. Enable S3 Versioning on both buckets.
+3. In the source bucket, open Management → Replication rules → Create replication rule.
+4. Specify whether to replicate all objects or only selected prefixes/tags.
+5. Configure the destination bucket. If it's in another account, provide the destination account details and authorize the replication role in the destination bucket policy.
+6. Configure the required IAM permissions and KMS permissions if using SSE-KMS encryption.
+7. Save the rule and upload a test object. Verify the object's replication status.
+By default, a newly created replication rule applies to eligible new objects; use S3 Batch Replication if you also need to replicate existing objects. 
+
+AWS re:Post
+
+
+
+3. What if the source is an EC2 instance inside a VPC?
+A VPC does not contain an S3 bucket; S3 is a regional AWS service. Your EC2 instance can upload files to a bucket in another Region using AWS CLI or an SDK, provided the IAM permissions and network connectivity are configured.
+
+For example:
+aws s3 cp report.csv s3://destination-bucket/reports/report.csv \
+  --region ap-south-1
+
+Use an appropriate S3 VPC endpoint or other permitted network path. If the bucket is in another Region, make sure the CLI uses the destination Region. This command copies a file once; it does not establish continuous replication.
+
+CRR vs CORS vs AWS Backup
+Concept	Purpose
+S3 CRR	Automatically replicate S3 objects to another Region
+S3 cross-account access	Allow an authorized principal in another account to access bucket objects
+CORS	Allow browser-based applications from specified origins to make cross-origin requests
+AWS Backup cross-account copy	Keep recoverable backups in a separate account
+AWS Backup cross-Region copy	Keep recoverable backups in another Region
+
+Interview tip: If asked, “How would you copy S3 data from one Region to another automatically?”, answer S3 Cross-Region Replication (CRR). If asked, “How would you protect EC2 and RDS backups against account compromise or regional outages?”, answer AWS Backup with cross-account and/or cross-Region copy, depending on the requirement.
+
+
