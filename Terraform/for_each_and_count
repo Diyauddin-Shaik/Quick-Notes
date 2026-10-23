@@ -1,0 +1,45 @@
+You selected count, which can create three EC2 instances. However, the instance names dev, test, and prod are distinct, meaningful keys, making for_each a better fit.
+variable "environments" {
+  default = ["dev", "test", "prod"]
+}
+
+resource "aws_instance" "app" {
+  count         = length(var.environments)
+  ami           = var.ami_id
+  instance_type = "t3.micro"
+
+  tags = {
+    Name = var.environments[count.index]
+  }
+}
+
+Resource addresses are index-based:
+- aws_instance.app[0] → dev
+- aws_instance.app[1] → test
+- aws_instance.app[2] → prod
+If you remove test from the middle, the indices shift. Terraform may propose updating or replacing resources associated with the shifted indices, depending on the changes. This can be risky.
+
+Option 2: for_each — recommended here
+variable "environments" {
+  default = toset(["dev", "test", "prod"])
+}
+
+resource "aws_instance" "app" {
+  for_each      = var.environments
+  ami           = var.ami_id
+  instance_type = "t3.micro"
+
+  tags = {
+    Name = each.key
+  }
+}
+
+Addresses use stable keys:
+- aws_instance.app["dev"]
+- aws_instance.app["test"]
+- aws_instance.app["prod"]
+Removing test means Terraform can target that specific instance for destruction without shifting the other environments' addresses.
+Remember this interview rule
+- count — when you need a number of similar instances and index-based identity is acceptable.
+- for_each — when resources have meaningful identities, such as environment names, usernames, or subnet keys.
+
