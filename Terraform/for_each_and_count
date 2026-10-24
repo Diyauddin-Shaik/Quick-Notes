@@ -43,3 +43,22 @@ Remember this interview rule
 - count — when you need a number of similar instances and index-based identity is acceptable.
 - for_each — when resources have meaningful identities, such as environment names, usernames, or subnet keys.
 
+
+------------------------------------------------------------------------------------------------------------------------------------
+Dynamic Blocks
+variable "ports" {
+  default = [80, 443, 8080]
+}
+
+dynamic "ingress" {
+  for_each = var.ports
+
+  content {
+    from_port   = ingress.value
+    to_port     = ingress.value
+    protocol    = "tcp"
+    cidr_blocks = ["10.0.1.0/24"]
+  }
+}
+
+
