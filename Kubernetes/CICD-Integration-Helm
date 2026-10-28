@@ -1,0 +1,75 @@
+CICD integrationwith Helm 
+
+1. Developer pushes code
+
+Git repository
+
+2. Jenkins builds and tests
+
+Run tests, build the container image
+
+3. Push image to registry
+
+For example, AWS ECR
+
+4. Validate Helm chart
+
+Lint and render manifests
+
+5. Deploy to Kubernetes
+
+Helm upgrade and rollout verification
+
+Example Jenkins pipeline
+pipeline {
+    agent any
+
+    environment {
+        RELEASE = 'web-prod'
+        NAMESPACE = 'prod'
+        CHART = './helm/web-app'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Validate Helm') {
+            steps {
+                sh 'helm lint $CHART'
+                sh 'helm template $RELEASE $CHART -n $NAMESPACE'
+            }
+        }
+
+        stage('Build and Push Image') {
+            steps {
+                echo 'Build, tag and push the image to ECR'
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                sh '''
+                  helm upgrade --install $RELEASE $CHART \
+                    --namespace $NAMESPACE \
+                    --create-namespace \
+                    --wait \
+                    --timeout 5m
+                '''
+            }
+        }
+
+        stage('Verify Deployment') {
+            steps {
+                sh '''
+                  kubectl rollout status deployment/<deployment-name> \
+                    -n $NAMESPACE --timeout=5m
+                '''
+            }
+        }
+    }
+}
+
