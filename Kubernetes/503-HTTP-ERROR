@@ -1,0 +1,55 @@
+Helm scenario: HTTP 503 after a Helm upgrade
+Your team deployed a new application version using Helm.
+helm upgrade web-prod ./web-app -n prod
+After the upgrade, users report HTTP 503 errors.
+
+You check the Pods:
+NAME                       READY   STATUS
+web-app-7d9f8c6b5-x2abc     0/1     Running
+web-app-7d9f8c6b5-y3def     0/1     Running
+
+Both Pods are running, but neither is ready to receive traffic.
+
+Step 1: Understand what this tells you
+- Running means the container has started running; it does not guarantee that the application is healthy.
+- 0/1 Ready means the Pod has one container, and that container is not ready.
+- HTTP 503 means the request could not be served. One common cause is that the Service or Ingress has no healthy backend Pods, although the exact cause depends on where the 503 originates.
+Step 2: Investigate in the right order
+Run these commands:
+
+------------------------------------------Checks-------------------------------------------------------------------
+
+
+1. Check the Pod's readiness failure and events
+kubectl describe pod <pod-name> -n prod
+
+Look for messages such as Readiness probe failed, connection refused, HTTP status errors, or missing configuration.
+
+2. Check application logs
+kubectl logs <pod-name> -n prod
+kubectl logs <pod-name> -n prod --previous
+
+The second command helps if the container has restarted and previous logs are available.
+
+3. Check whether the Service has ready backends
+kubectl get svc -n prod
+kubectl get endpointslices -n prod
+kubectl get pods -n prod --show-labels
+
+If the Service has no usable endpoints, check its selector against the Pod labels and investigate why the Pods are not ready.
+
+4. Check the Helm release and deployed configuration
+helm status web-prod -n prod
+helm history web-prod -n prod
+helm get values web-prod -n prod
+helm get manifest web-prod -n prod
+
+
+These help you identify what changed in the upgrade, including image versions, probe configuration, ports, selectors, and application settings.
+
+5. Decide whether to fix forward or roll back
+
+If the new release caused the outage and a known-good revision exists, consider:
+helm rollback web-prod <previous-revision> -n prod --wait
+
+Confirm the correct revision with helm history first. After recovery, fix the chart or values file and test the corrected release.
