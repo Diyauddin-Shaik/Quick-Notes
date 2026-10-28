@@ -1,0 +1,338 @@
+UseCase - 1 : Imagine you're deploying an application to Kubernetes
+Suppose your team has a web application that needs to run on your EKS cluster.
+
+To deploy it, you need several Kubernetes resources:
+Deployment
+Service
+ConfigMap
+Secret
+
+We need to write them seperately and deploy them kubectl apply -f file.yaml and need to maintain them separately
+
+If we have 50 application then what here we use Helm
+
+Instead of maintaining a separate, fixed Deployment YAML for every environment, you prepare one template and tell Helm which values to insert.
+
+					Helm Chart
+
+				Reusable package for your application
+					    |
+					Helm combines two things
+
+			1. Template — how the Kubernetes resource should look
+
+			2. Values — the settings for this deployment
+				|			|
+			Development 			Production
+			1 replica			5 replicas
+			Image 1.0			Image 1.1
+
+You don't create two different charts just because the replica counts or image tags differ. You can use one chart with different configuration values.
+
+Three words you must understand first
+- Chart: The package containing the reusable templates and configuration defaults.
+- Template: A file describing what a Kubernetes resource should look like, with placeholders for values that can change.
+- Values: The actual settings you want to use, such as the number of replicas and the container image version.
+- Release : The particular deployment created from that chart.
+
+Lesson 2: Chart structure and installation
+What happens when we create a Helm chart?
+
+helm create web-app
+Helm generates a directory structure for you.
+web-app/
+
+Chart.yaml
+Chart metadata: name, chart version, application version.
+
+
+values.yaml
+Default settings such as replica count, image and service port.
+
+
+templates/
+Deployment, Service and other Kubernetes manifest templates.
+
+
+charts/
+Chart dependencies, when required.
+You usually don't need to create every file manually. helm create generates a starter chart that you can customize.
+2. Understand the three most important files
+A. Chart.yaml — what is this package?
+
+apiVersion: v2
+name: web-app
+version: 1.0.0
+appVersion: "2.5.0"
+type: application
+
+- name: chart name.
+- version: version of the Helm chart.
+- appVersion: version of the application being deployed.
+- apiVersion: v2: Helm chart format version, not the Kubernetes Deployment API version.
+Interview tip: Chart version and application version are different. You could update the chart's Deployment template without changing the application image.
+B. values.yaml — what settings do we want?
+
+replicaCount: 2
+
+image:
+  repository: nginx
+  tag: "1.28"
+
+service:
+  type: ClusterIP
+  port: 80
+
+port: 80
+
+
+This tells the chart to use two replicas, the nginx:1.28 image, and a ClusterIP Service on port 80.
+
+These are defaults. You can override them for different environments.
+C. templates/deployment.yaml — how should Kubernetes resources look?
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: nginx
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          ports:
+            - containerPort: 80
+
+
+The expressions inside {{ }} are placeholders evaluated by Helm.
+
+For example, if the release is named web-prod, Helm inserts that name into the manifest. If replicaCount is 2, the generated Deployment requests two replicas.
+3. How do we install the chart?
+Once the chart is ready, we can install it.
+
+helm lint ./web-app
+helm template web-prod ./web-app
+helm install web-prod ./web-app --namespace prod --create-namespace
+
+Command	Purpose
+helm lint	Checks for common chart problems.
+helm template	Renders templates into Kubernetes YAML locally; does not install the release.
+helm install	Installs the chart as a release in the cluster.
+
+Upgrade the values and run this cmd ----  helm upgrade web-prod ./web-app --namespace prod -f values-prod.yaml
+
+
+2. How do you deploy them?
+For development:
+helm upgrade --install web-dev ./web-app \
+  -n dev --create-namespace \
+  -f values-dev.yaml
+
+For production:
+helm upgrade --install web-prod ./web-app \
+  -n prod --create-namespace \
+  -f values-prod.yaml
+
+Command	When to use it
+helm install	Deploy a new release for the first time.
+helm upgrade	Update an existing release.
+helm upgrade --install	Upgrade if it exists; otherwise, install it.
+helm rollback	Return to a previous release revision.
+
+Important: An upgrade command succeeding doesn't automatically prove the application is healthy. You should verify the rollout and application behavior.
+kubectl rollout status deployment/web-prod -n prod
+kubectl get pods -n prod
+helm history web-prod -n prod
+
+Which Helm command would you use to return to revision 1, and how would you verify that the application recovered?
+
+helm rollback web-prod 1 -n prod --wait
+
+Let's break it down:
+Part	Meaning
+helm rollback	Restore a previous Helm release revision.
+web-prod	The existing Helm release name.
+1	The revision number to restore.
+-n prod	The Kubernetes namespace.
+--wait	Wait for supported resources to become ready, subject to the timeout.
+
+2. How do you verify recovery?
+After the rollback, run:
+helm status web-prod -n prod
+
+kubectl rollout status deployment/web-prod -n prod
+
+kubectl get pods -n prod
+
+kubectl get endpointslices -n prod
+
+
+
+Chart repositories
+A company may have dozens of Helm charts. Instead of sharing chart directories manually, it can publish charts to a repository or OCI registry so teams can discover and distribute them.
+
+
+helm repo add bitnami https://charts.bitnami.com/bitnami
+helm repo update
+helm search repo nginx
+
+
+Helm upgrade failure and troubleshooting
+This is one of the most important real-world interview scenarios.
+
+Imagine you run:
+
+helm upgrade web-prod ./web-app -n prod
+
+After the upgrade, some Pods enter CrashLoopBackOff, and users receive HTTP 503 errors.
+
+Before rolling back, you should investigate the cause.
+
+A sensible starting sequence is:
+
+helm status web-prod -n prod
+helm history web-prod -n prod
+kubectl get pods -n prod
+kubectl get events -n prod --sort-by=.lastTimestamp
+
+
+These commands tell you:
+- helm status — the release's current status and related information.
+- helm history — which revisions exist and their statuses.
+- kubectl get pods — which Pods are failing.
+- kubectl get events — recent scheduling, container and resource-related problems.
+If a Pod is crashing, investigate further:
+
+kubectl describe pod <pod-name> -n prod
+kubectl logs <pod-name> -n prod
+kubectl logs <pod-name> -n prod --previous
+
+The --previous option is particularly useful because it retrieves logs from the previous terminated container instance, when available.
+
+
+After a Helm upgrade, a Pod enters CrashLoopBackOff.
+
+Which command would you run first to investigate the Pod, and what information would you look for in its output?
+
+NAME                       READY   STATUS
+web-app-7c9f8d6b5f-x2abc   0/1     CrashLoopBackOff
+
+
+kubectl describe pod web-app-7c9f8d6b5f-x2abc -n prod
+
+Look at three important sections in the output.
+
+A. Last State / Exit Code
+Last State:  Terminated
+Reason:      OOMKilled
+Exit Code:   137
+
+B. Events
+Warning  BackOff
+Back-off restarting failed container
+
+This confirms Kubernetes is backing off before restarting the container. Look for earlier events that may explain why it failed, such as a failed liveness probe or an OOM kill.
+
+C. Container details
+Check the configured image, command, environment variables, resource limits, and health probes. These help identify configuration and startup problems.
+
+What is a Helm dependency?
+Imagine your application requires three components:
+- A web application
+- Redis for caching
+- PostgreSQL for database storage
+You could maintain three separate Helm charts and install each one individually. However, managing their versions and installation configuration can become cumbersome.
+
+A Helm dependency lets one chart declare that it relies on another chart, which is called a subchart when used as a dependency.
+
+For example, the parent chart might contain:
+# Chart.yaml
+apiVersion: v2
+name: my-application
+version: 1.0.0
+
+dependencies:
+  - name: redis
+    version: "20.0.0"
+    repository: "https://charts.bitnami.com/bitnami"
+    condition: redis.enabled
+	
+This declares Redis as a dependency. The version shown is illustrative; use a version available in your configured repository.
+
+The parent chart can expose configuration in its values.yaml:
+redis:
+  enabled: true
+  architecture: standalone
+  
+2. How do you download and use the dependency?
+From the parent chart directory:
+helm dependency update ./my-application
+helm dependency list ./my-application
+helm lint ./my-application
+helm template my-app ./my-application
+
+- helm dependency update resolves dependencies and downloads the charts.
+- helm dependency list shows the declared dependencies and their status.
+- helm lint checks the chart.
+- helm template renders the combined manifests for inspection.
+When redis.enabled is set to false, the dependency's condition disables Redis in the parent chart's rendered release.
+
+Helm hooks
+What problem do Helm hooks solve?
+Normally, Helm installs or upgrades the Kubernetes resources defined in a chart. Sometimes, however, you need a task to run at a particular point in that lifecycle.
+
+For example, suppose your team is upgrading an application that uses a database. Before deploying the new application version, you need to run a database migration.
+
+You can use a Helm hook to run a Kubernetes Job at a particular lifecycle event.
+
+Common hook types:
+Hook	When it runs
+pre-install	Before installing the chart's normal resources
+post-install	After installation resources are loaded
+pre-upgrade	Before an upgrade
+post-upgrade	After an upgrade
+pre-delete	Before deleting a release
+post-delete	After deleting a release
+pre-rollback	Before rolling back
+post-rollback	After rolling back
+
+Practical example: Run a database migration before an upgrade
+In a chart template, you might define a Kubernetes Job like this:
+
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-migration
+  annotations:
+    helm.sh/hook: pre-upgrade
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: migration
+          image: my-app:2.0
+          command: ["python", "manage.py", "migrate"]
+hat happens when you upgrade?
+1. Helm runs the pre-upgrade hook.
+2. The Job runs the migration command.
+3. If the hook succeeds, Helm proceeds with the normal upgrade.
+4. If the hook fails, Helm normally fails the upgrade rather than proceeding as if the hook succeeded.
+The example assumes your image contains the migration command and has the required database configuration and credentials. A production migration also needs careful compatibility planning.
+
+Important interview point: A Helm rollback does not automatically undo a database migration. Design migrations so the old and new application versions can coexist safely, especially during 
+rolling deployments.
+
+
+
