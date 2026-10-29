@@ -1,0 +1,22 @@
+PDB — PodDisruptionBudget
+A PDB helps protect application availability during supported voluntary disruptions, such as node draining for maintenance.
+
+For example, if you run five replicas and want at least four to remain available during maintenance, define a PDB with minAvailable: 4.
+
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: web-pdb
+  namespace: prod
+spec:
+  minAvailable: 4
+  selector:
+    matchLabels:
+      app: web-app
+
+The selector must match the labels on your Deployment's Pods.
+
+
+kubectl get pdb -n prod
+kubectl describe pdb web-pdb -n prod
+kubectl drain <node-name> --ignore-daemonsets
