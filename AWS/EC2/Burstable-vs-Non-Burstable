@@ -1,0 +1,105 @@
+EC2 Burstable vs Non-Burstable Instances
+First, remember:
+- Burstable instance: Can temporarily use more CPU than its baseline performance when additional CPU capacity is needed.
+- Non-burstable instance: Provides consistent CPU capacity according to its configured vCPU resources, rather than relying on CPU credits.
+
+
+1. What exactly is CPU bursting?
+Imagine you have a t3.medium EC2 instance.
+
+It has:
+- 2 vCPUs
+- 20% baseline CPU utilization per vCPU
+- CPU credits that it earns when running below its baseline.
+Suppose your application normally uses 10% CPU, but suddenly traffic increases and CPU usage needs to reach 80%.
+
+The T-family instance can use accumulated CPU credits to burst above its baseline.
+Example: CPU utilization over time
+10%
+Normal workload — below baseline
+
+
+80%
+Sudden traffic spike — uses CPU credits to burst
+
+
+Illustrative CPU utilization, not a measured instance benchmark.
+
+The important concept is CPU credits.
+
+One CPU credit represents one vCPU running at 100% utilization for one minute.
+
+For example:
+- 1 credit = 1 vCPU × 100% × 1 minute.
+- 2 credits = 1 vCPU × 100% × 2 minutes.
+- Or 2 vCPUs × 100% × 1 minute.
+2. What happens when CPU credits are exhausted?
+This is where interviewers often ask follow-up questions.
+
+There are two important T-family operating modes:
+Mode	What happens?
+Standard	When earned credits are exhausted, CPU performance is limited to the baseline level.
+Unlimited	The instance can continue bursting beyond its baseline, but surplus CPU credits may incur additional charges.
+
+Understand with an example
+Suppose your application normally uses 10% CPU, but suddenly needs 90%.
+1. Instance earns CPU credits while running below baseline.
+2. Traffic increases.
+3. Instance uses accumulated credits to increase CPU performance.
+4. If credits run out:
+   - Standard mode: CPU is limited to baseline.
+   - Unlimited mode: It can continue bursting, potentially incurring additional charges.
+Important: Unlimited does not mean unlimited CPU. The instance is still constrained by its available vCPUs and physical capacity.
+3. What is a non-burstable instance?
+Consider an m6i.large or c6i.large.
+
+These are non-burstable instances.
+
+They provide their configured CPU capacity without relying on CPU credits.
+
+For example:
+- M family: balanced CPU and memory.
+- C family: CPU-intensive workloads.
+- R family: memory-intensive workloads.
+If your application continuously needs high CPU utilization, a suitable non-burstable C-family instance is generally a better choice than relying on a T-family instance to burst continuously.
+Metric	What to investigate
+CPUUtilization	Actual CPU usage
+CPUCreditBalance	Remaining accumulated CPU credits
+CPUCreditUsage	Credits consumed
+CPUSurplusCreditBalance	Surplus credits used in Unlimited mode
+CPUSurplusCreditsCharged	Surplus credits charged
+
+Useful commands:
+# Check CPU utilization
+top
+
+# Check CPU and load average
+uptime
+
+# Check CPU details
+lscpu
+
+# Identify high CPU processes
+ps aux --sort=-%cpu | head
+
+# Check memory
+free -h
+
+# Check system load
+vmstat 1 5
+
+
+Example : For a T-family instance, you can configure the credit specification:
+
+resource "aws_instance" "app" {
+  ami           = var.ami_id
+  instance_type = "t3.medium"
+
+  credit_specification {
+    cpu_credits = "unlimited"
+  }
+}
+
+You can choose:
+- standard
+- unlimited
