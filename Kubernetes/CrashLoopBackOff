@@ -1,0 +1,68 @@
+CrashLoopBackoff -  (When repeated restarts happen with increasing delays, we see CrashLoopBackOff)
+
+BackOff?
+Suppose your application container starts but crashes immediately. Without a backoff mechanism, Kubernetes would continuously restart it:
+Start → Crash → Restart → Crash → Restart → Crash
+
+This can consume CPU, generate excessive logs and put unnecessary pressure on the worker node.
+
+So K8S Increases the waiting time between restart attempts.
+
+How does it work?
+CrashLoopBackOff timeline
+1. First attempt
+   
+   Container starts → Application crashes.
+2. Second attempt
+   
+   Kubernetes waits approximately 10 seconds before restarting.
+3. Third attempt
+   
+   Container crashes again → waits approximately 20 seconds.
+4. Fourth attempt
+   
+   Crashes again → waits approximately 40 seconds.
+5. Subsequent attempts
+   
+   Waiting time continues increasing, up to approximately 5 minutes by default.
+
+
+
+What happens internally?
+
+Flow
+
+Kubelet detects container stopped
+              |
+              v
+Kubelet checks restart policy
+              |
+              v
+Restart container
+              |
+              v
+Application crashes again
+              |
+              v
+Increase backoff delay
+              |
+              v
+Wait before next restart
+              |
+              v
+CrashLoopBackOff
+
+
+Troubleshoot Commands
+
+#	Command	What we investigate
+1	kubectl get pods -n dev	Pod status and restart count
+2	kubectl describe pod POD -n dev	Events, probes, exit code, container state
+3	kubectl logs POD -n dev	Current application logs
+4	kubectl logs POD -n dev --previous	Logs from the crashed container
+5	kubectl get events -n dev --sort-by=.lastTimestamp	Cluster events and failures
+6	kubectl get pod POD -n dev -o yaml	Full pod configuration
+7	kubectl top pod POD -n dev	CPU and memory consumption
+8	kubectl describe deployment APP -n dev	Deployment configuration and rollout
+9	kubectl get configmap -n dev	Available ConfigMaps
+10	kubectl get secrets -n dev	Available Secrets
