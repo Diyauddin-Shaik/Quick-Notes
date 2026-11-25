@@ -249,3 +249,14 @@ Important:
 - [ ] Producer routing logic
 - [ ] Lambda and SQS integration
 - [ ] Batch Size and Concurrency
+
+
+Service             	CloudWatch                                         metric	What it tells us
+Lambda              	Errors	                                           Failed invocations
+Lambda	              Throttles	                                         Invocations rejected due to concurrency limits
+Lambda	              Duration	                                         Processing time
+Lambda	              ConcurrentExecutions	                             Simultaneous executions
+SQS	                  ApproximateNumberOfMessagesVisible	               Messages waiting in queue
+SQS	                  ApproximateNumberOfMessagesNotVisible	             Messages currently in-flight
+SQS	                  ApproximateAgeOfOldestMessage	                     How long the oldest message has been waiting
+DLQ	                  ApproximateNumberOfMessagesVisible	               Failed messages accumulated in DLQ
