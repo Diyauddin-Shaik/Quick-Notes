@@ -1,0 +1,12 @@
+1. Different Terraform testing approaches
+Testing                               approach	                                What it checks	Example
+Static                      analysis	Code quality and best practices	                  TFLint
+Security scanning	          Misconfigurations and vulnerabilities	                  Checkov, Trivy
+Policy as Code	          Whether infrastructure follows company policies	        OPA, Conftest, Sentinel
+Unit testing	            Individual Terraform module logic	                       Terraform tests, mocks
+Integration testing	     Whether deployed resources work together	                      Terratest
+Compliance testing	    Whether resources follow compliance requirements	          AWS Config, Checkov
+Drift detection        	Whether actual infrastructure differs from Terraform        Terraform plan, drift detection
+                        state/configuration	        
+Cost estimation        	Estimated infrastructure cost before deployment	                  Infracost
+Contract/schema        testing	Whether module inputs and outputs meet expectations	 Custom assertions and CI checks
