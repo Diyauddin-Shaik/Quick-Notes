@@ -1,0 +1,251 @@
+# AWS SQS – Quick Study Notes
+
+## 1. What is SQS?
+
+**Amazon Simple Queue Service (SQS)** is a fully managed message queuing service used to decouple applications.
+
+Example:
+
+- Producer sends messages.
+- SQS stores messages.
+- Consumer retrieves and processes messages.
+
+**Flow:**
+
+`Producer → SQS Queue → Consumer (Lambda / Application)`
+
+## 2. SQS Components
+
+| Component          | Meaning                                         |
+| ------------------ | ----------------------------------------------- |
+| Queue              | Stores messages temporarily                     |
+| Message            | Actual data sent by producer                    |
+| Producer           | Application that sends messages                 |
+| Consumer           | Application/Lambda that processes messages      |
+| Polling            | Consumer checks and retrieves messages          |
+| Visibility Timeout | Temporarily hides a received message            |
+| DLQ                | Stores messages that repeatedly fail processing |
+
+## 3. Message Example (JSON)
+
+A producer sends this message to SQS:
+
+```json
+{
+  "order_id": "ORD101",
+  "customer": "John",
+  "amount": 1000,
+  "status": "NEW"
+}
+```
+
+Remember:
+
+- SQS stores the message.
+- Consumer reads the message.
+- Consumer deletes it after successful processing.
+
+**Message size:** Maximum 1 MiB per SQS message.
+
+For larger files, store the file in S3 and send its S3 bucket/key reference through SQS.
+
+## 4. Polling
+
+Polling means the consumer checks the queue for messages.
+
+**Short Polling**
+
+- Checks for messages and responds immediately.
+- May return an empty response even when messages exist.
+
+**Long Polling**
+
+- Waits for messages for up to 20 seconds.
+- Reduces empty responses and unnecessary API calls.
+
+Remember: Long polling is generally preferred for efficient message retrieval.
+
+## 5. Visibility Timeout
+
+Visibility Timeout temporarily hides a message after a consumer receives it.
+
+Example:
+
+- Visibility timeout = 60 seconds.
+- Lambda processing time = 90 seconds.
+- After 60 seconds, the message becomes visible again.
+- Another consumer may receive the same message.
+
+**Important:** This can cause duplicate processing.
+
+### How to prevent problems?
+
+- Configure an appropriate visibility timeout.
+- Implement idempotency.
+- Delete the message after successful processing.
+
+For Lambda SQS event source mappings, AWS recommends setting visibility timeout to at least six times the Lambda function timeout, plus the batching window.
+
+## 6. Idempotency
+
+Idempotency means processing the same message multiple times should not create duplicate business operations.
+
+Example:
+
+```json
+{
+  "order_id": "ORD101",
+  "amount": 1000,
+  "operation": "payment"
+}
+```
+
+Before processing the payment, Lambda checks whether `ORD101` has already been processed.
+
+- If not processed → process payment.
+- If already processed → skip duplicate payment.
+
+**Real-time example:** Prevent charging a customer twice when an SQS message is delivered more than once.
+
+## 7. Dead-Letter Queue (DLQ)
+
+A Dead-Letter Queue is a separate queue used to isolate messages that repeatedly fail processing.
+
+Example flow:
+
+`Main Queue → Lambda fails → Retry → Maximum receive count exceeded → DLQ`
+
+### Redrive Policy
+
+We configure:
+
+- `deadLetterTargetArn`
+- `maxReceiveCount`
+
+Example configuration fragment:
+
+```json
+{
+  "deadLetterTargetArn": "arn:aws:sqs:us-east-1:123456789012:failed-orders",
+  "maxReceiveCount": 3
+}
+```
+
+This is an illustrative policy fragment, not a complete queue configuration.
+
+**Why DLQ?**
+
+- Investigate failed messages.
+- Check CloudWatch logs.
+- Identify root causes.
+- Fix the issue.
+- Redrive messages when safe.
+
+Note: Dead Queue is commonly used as shorthand for Dead-Letter Queue.
+
+## 8. Priority Queue
+
+Priority Queue means processing important messages before less important messages.
+
+**Important:** SQS does NOT provide a native Priority Queue setting.
+
+We implement priority using multiple queues:
+
+- High-priority queue
+- Normal-priority queue
+- Low-priority queue
+
+### Example JSON – High Priority
+
+```json
+{
+  "order_id": "ORD101",
+  "order_type": "EXPRESS",
+  "priority": 1
+}
+```
+
+### Example JSON – Normal Priority
+
+```json
+{
+  "order_id": "ORD102",
+  "order_type": "NORMAL",
+  "priority": 2
+}
+```
+
+### Who decides the priority?
+
+The **Producer application** decides based on business rules.
+
+Example:
+
+```python
+if order["priority"] == 1:
+    queue_url = HIGH_QUEUE_URL
+else:
+    queue_url = NORMAL_QUEUE_URL
+```
+
+The producer sends the message to the selected queue.
+
+Remember: Separate queues alone do not guarantee strict priority. Consumer logic must also prioritize high-priority messages.
+
+## 9. Lambda + SQS Integration
+
+AWS Lambda can consume messages from SQS using an Event Source Mapping.
+
+Flow:
+
+`Producer → SQS → Lambda → Process Message → Delete on Success`
+
+Important:
+
+- AWS manages polling for the event source mapping.
+- Lambda receives messages in batches.
+- Batch size controls the number of messages delivered per invocation.
+- Concurrency controls simultaneous Lambda executions.
+- Failed messages can be retried and eventually moved to a DLQ.
+
+## 10. What Controls Processing Speed?
+
+| Setting             | Purpose                                                    |
+| ------------------- | ---------------------------------------------------------- |
+| Batch Size          | Messages delivered in one Lambda invocation                |
+| Lambda Concurrency  | Number of simultaneous executions                          |
+| Maximum Concurrency | Caps concurrent processing for an SQS event source mapping |
+| Visibility Timeout  | How long a received message stays hidden                   |
+| Long Polling        | Efficiently retrieves available messages                   |
+
+**Important:** SQS is a buffer, not a built-in rate limiter.
+
+## 11. Three Concepts – Never Confuse Them
+
+| Concept            | Main purpose                                      |
+| ------------------ | ------------------------------------------------- |
+| Priority Queue     | Which messages should be processed first?         |
+| Visibility Timeout | How long should a received message remain hidden? |
+| DLQ                | Where should repeatedly failing messages go?      |
+
+## 12. Interview-Ready Summary
+
+"Amazon SQS is a managed message queuing service that decouples producers and consumers. The producer sends messages to a queue, and consumers retrieve them through polling. Visibility Timeout temporarily hides messages during processing. If processing repeatedly fails, we can configure a Dead-Letter Queue using a redrive policy. For priority-based processing, we can create separate queues and implement routing logic in the producer application. When integrating Lambda with SQS, we use event source mapping, batch size and concurrency controls to manage processing."
+
+---
+
+## Quick Revision Checklist
+
+- [ ] SQS basics and components
+- [ ] Producer and Consumer
+- [ ] Messages and JSON payload
+- [ ] Short Polling vs Long Polling
+- [ ] Visibility Timeout
+- [ ] Duplicate message delivery
+- [ ] Idempotency
+- [ ] Dead-Letter Queue
+- [ ] Redrive Policy and Maximum Receive Count
+- [ ] Priority Queue design
+- [ ] Producer routing logic
+- [ ] Lambda and SQS integration
+- [ ] Batch Size and Concurrency
